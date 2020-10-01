@@ -9,7 +9,7 @@ using namespace std;
 int main(int argc, char* argv[]) {
     srand((unsigned int)time(NULL));
     string line;
-    Allocator *allocator = new Allocator("best_fit");
+    Allocator *allocator = new Allocator("worst_fit");
     
     if (argc != 2) {
         cout << ERROR::NO_INPUT << endl;
@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
         while (getline(file, line)) {
             string name;
             stringstream(line) >> name;
-            cout << "ADDING " << name << endl;
+            // cout << "ADDING " << name << endl;
             allocator->alloc(name);
             count++;
             if (count > 1000) {

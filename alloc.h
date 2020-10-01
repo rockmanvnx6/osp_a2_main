@@ -76,6 +76,29 @@ class Allocator {
             return smallest;
         }
 
+         MemoryNode *worst_fit(string data) {
+            MemoryNode *iter = free_mb_head;
+            // double min_size = numeric_limits<double>::max();
+            MemoryNode *largest = nullptr;
+            
+            if (free_mb_head) {
+                while(iter != nullptr) {
+                    if ((largest && iter->size >= data.size() && iter->size >= largest->size) || 
+                        (!largest && iter->size >= data.size()) ) {
+                        largest = iter;
+                    }
+                    iter = iter->next;
+                }    
+            }
+
+            if (largest) {
+                cout << "LARGEST: " << largest->data << endl;
+            }
+            
+            
+            return largest;
+        }
+
         void *search_free_memory(string data, const string strategy) {
             if(strategy.compare("first_fit") == 0) {
                 return first_fit(data);
@@ -83,6 +106,10 @@ class Allocator {
             
             if (strategy.compare("best_fit") == 0) {
                 return best_fit(data);
+            }
+
+            if (strategy.compare("worst_fit") == 0) {
+                return worst_fit(data);
             }
             return ERROR::INVALID_STRATEGY_ERROR;
         }
@@ -227,7 +254,7 @@ class Allocator {
             int i = 0;
             while (it != nullptr) {
                 if (i == random) {
-                    cout << "REMOVING " << it->data << endl;
+                    // cout << "REMOVING " << it->data << endl;
                     // it->data = "X";
 
                     if (it->prev) {
