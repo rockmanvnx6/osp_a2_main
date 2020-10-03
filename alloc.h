@@ -32,10 +32,11 @@ class Allocator {
             free_mb       = free;
         }
 
-        int length_alloc = 0;
+        static bool compare_func(const MemoryNode &first, const MemoryNode &second) {
+            return first.start_memory < second.start_memory;
+        }
 
         list<MemoryNode>::iterator first_fit(string data) {
-            // return nullptr;
             list<MemoryNode>::iterator iter = free_mb->begin();
 
             while(iter != free_mb->end()) {
@@ -90,6 +91,7 @@ class Allocator {
             return largest;
         }
 
+
         list<MemoryNode>::iterator search_free_memory(string data, const string strategy) {
             if(strategy.compare("first_fit") == 0) {
                 return first_fit(data);
@@ -130,8 +132,7 @@ class Allocator {
                alloc_mb->push_back(*memory_pointer);
                free_mb->erase(memory_pointer);
             }
-            // print_alloc();
-            length_alloc++;
+            print_alloc();
             return nullptr;
         }
 
@@ -151,6 +152,15 @@ class Allocator {
                     iter++;
             }
             cout << endl;
+
+            iter = alloc_mb->begin();
+            cout << "ALLOC: ";
+            while (iter != alloc_mb->end()) {
+                    cout << iter->start_memory<< "-";
+                    iter++;
+            }
+            cout << endl;
+ 
             cout << "\n"<<endl;
 
             iter = free_mb->begin();
@@ -171,8 +181,35 @@ class Allocator {
             }
             cout << endl;
 
-
+            
+            iter = free_mb->begin();
+            cout << "FREE: ";
+            while (iter != free_mb->end()) {
+                    cout << iter->start_memory<< "-";
+                    iter++;
+            }
+            cout << endl;
             cout << "--------------------------" << endl;
+        }
+
+        void sort_n_merge() {
+            free_mb->sort(Allocator::compare_func);
+            list<MemoryNode>::iterator it = free_mb->begin();
+            while(it != free_mb->end()) {
+                list<MemoryNode>::iterator next_it = next(it);
+                while (next_it != free_mb->end()) {
+                    void *next_start = (void*)((char*)(it->start_memory) + (int)it->size);
+                    if (next_it->start_memory == next_start) {
+                        cout << "MERGING: " << it->data << " and " << next_it->data << endl;
+                        /* MERGE 2 nodes */
+                        it->size += next_it->size;
+                        free_mb->erase(next_it++);
+                    } else {
+                        break;
+                    }
+                }
+                it++;
+            }
         }
 
         void random_dealloc() {
@@ -181,7 +218,7 @@ class Allocator {
             int i=0;
             while (it != alloc_mb->end()) {
                 if (i == random) {
-                    // cout << "REMOVING " << it->data << endl;
+                    cout << "REMOVING " << it->data << endl;
                     free_mb->push_back(*it);
                     alloc_mb->erase(it);
                     break;
@@ -189,7 +226,8 @@ class Allocator {
                 it++;
                 i++;
             }
-            // print_alloc();
+            sort_n_merge();
+            print_alloc();
             return;
         }
 };

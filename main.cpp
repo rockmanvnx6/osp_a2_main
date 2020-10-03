@@ -27,11 +27,11 @@ int main(int argc, char* argv[]) {
         while (getline(file, line)) {
             string name;
             stringstream(line) >> name;
-            // cout << "ADDING " << name << endl;
+            cout << "ADDING " << name << endl;
             allocator->alloc(name);
             count++;
-            if (count > 1000) {
-                int to_remove = 500;
+            if (count > 2) {
+                int to_remove = 2;
                 while(to_remove > 0) {
                     allocator->random_dealloc();
                     to_remove--;
