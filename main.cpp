@@ -9,7 +9,11 @@ using namespace std;
 int main(int argc, char* argv[]) {
     srand((unsigned int)time(NULL));
     string line;
-    Allocator *allocator = new Allocator("worst_fit");
+
+    list<MemoryNode> alloc_mb;
+    list<MemoryNode> free_mb;
+
+    Allocator *allocator = new Allocator(&alloc_mb, &free_mb, "best_fit");
     
     if (argc != 2) {
         cout << ERROR::NO_INPUT << endl;

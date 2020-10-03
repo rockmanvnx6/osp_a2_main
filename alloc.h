@@ -9,9 +9,6 @@ class MemoryNode {
         void *start_memory;
         string data;
         double size;
-        
-        MemoryNode *prev;
-        MemoryNode *next;
 
         MemoryNode() { /* Default constructor */ }
         MemoryNode(void *mem_address, string content, double size_data) {
@@ -23,52 +20,48 @@ class MemoryNode {
 
 class Allocator {
     public:
-        MemoryNode *alloc_mb_head;
-        MemoryNode *free_mb_head;
+        list<MemoryNode> *alloc_mb;
+        list<MemoryNode> *free_mb;
         string strategy; 
 
         Allocator() { /* Default constructor */ }
         
-        Allocator(string alloc_strat) {
+        Allocator(list<MemoryNode> *alloc, list<MemoryNode> *free, string alloc_strat) {
             strategy      = alloc_strat;
+            alloc_mb      = alloc;
+            free_mb       = free;
         }
-        MemoryNode *alloc_mb_tail;
-        MemoryNode *free_mb_tail;
 
         int length_alloc = 0;
 
-        MemoryNode *first_fit(string data) {
+        list<MemoryNode>::iterator first_fit(string data) {
             // return nullptr;
-            MemoryNode *iter = free_mb_head;
+            list<MemoryNode>::iterator iter = free_mb->begin();
 
-            if (free_mb_head) {
-                while(iter != nullptr) {
-                    if (iter->size >= data.size()) {
-                        return iter;
-                    }
-                    iter = iter->next;
-                }    
-            }
+            while(iter != free_mb->end()) {
+                if (iter->size >= data.size()) {
+                    return iter;
+                }
+                iter++;
+            }    
            
-            return nullptr;
+            return iter;
         }
 
-        MemoryNode *best_fit(string data) {
-            MemoryNode *iter = free_mb_head;
+        list<MemoryNode>::iterator best_fit(string data) {
+            list<MemoryNode>::iterator iter = free_mb->begin();
             // double min_size = numeric_limits<double>::max();
-            MemoryNode *smallest = nullptr;
+            list<MemoryNode>::iterator smallest = free_mb->end();
             
-            if (free_mb_head) {
-                while(iter != nullptr) {
-                    if ((smallest && iter->size >= data.size() && iter->size <= smallest->size) || 
-                        (!smallest && iter->size >= data.size()) ) {
-                        smallest = iter;
-                    }
-                    iter = iter->next;
-                }    
-            }
+            while(iter != free_mb->end()) {
+                if ((iter->size >= data.size() && iter->size <= smallest->size) || 
+                    (smallest == free_mb->end() && iter->size >= data.size()) ) {
+                    smallest = iter;
+                }
+                iter++;
+            }    
 
-            if (smallest) {
+            if (smallest != free_mb->end()) {
                 cout << "SMALLEST: " << smallest->data << endl;
             }
             
@@ -76,22 +69,20 @@ class Allocator {
             return smallest;
         }
 
-         MemoryNode *worst_fit(string data) {
-            MemoryNode *iter = free_mb_head;
+        list<MemoryNode>::iterator worst_fit(string data) {
+            list<MemoryNode>::iterator iter = free_mb->begin();
             // double min_size = numeric_limits<double>::max();
-            MemoryNode *largest = nullptr;
+            list<MemoryNode>::iterator largest = free_mb->end();
             
-            if (free_mb_head) {
-                while(iter != nullptr) {
-                    if ((largest && iter->size >= data.size() && iter->size >= largest->size) || 
-                        (!largest && iter->size >= data.size()) ) {
-                        largest = iter;
-                    }
-                    iter = iter->next;
-                }    
-            }
+            while(iter != free_mb->end()) {
+                if ((iter->size >= data.size() && iter->size >= largest->size) || 
+                    (largest == free_mb->end() && iter->size >= data.size()) ) {
+                    largest = iter;
+                }
+                iter++;
+            }    
 
-            if (largest) {
+            if (largest != free_mb->end()) {
                 cout << "LARGEST: " << largest->data << endl;
             }
             
@@ -99,7 +90,7 @@ class Allocator {
             return largest;
         }
 
-        void *search_free_memory(string data, const string strategy) {
+        list<MemoryNode>::iterator search_free_memory(string data, const string strategy) {
             if(strategy.compare("first_fit") == 0) {
                 return first_fit(data);
             }
@@ -111,136 +102,72 @@ class Allocator {
             if (strategy.compare("worst_fit") == 0) {
                 return worst_fit(data);
             }
-            return ERROR::INVALID_STRATEGY_ERROR;
+            cout << ERROR::INVALID_STRATEGY_ERROR << endl;
+            return free_mb->end();
         }
 
         void *alloc(string data) {
-            void *memory_pointer = search_free_memory(data, strategy);
-            if (!memory_pointer) {
+            list<MemoryNode>::iterator memory_pointer = search_free_memory(data, strategy);
+            if (memory_pointer == free_mb->end()) {
                 void *request_memory = sbrk(data.size());
                 if (request_memory == ERROR::SBRK_MEMORY_ERROR) { 
                     cout << ERROR::MEMORY_ERROR << endl;
                     return nullptr;
                 };
                 MemoryNode *new_node = new MemoryNode(request_memory, data, data.size());
-                if (!alloc_mb_head) {
-                    alloc_mb_head = new_node;
-                    alloc_mb_tail = alloc_mb_head;
-                } else {
-                    alloc_mb_tail->next = new_node;
-                    new_node->prev = alloc_mb_tail;
-                    alloc_mb_tail  = alloc_mb_tail->next;
-                }
+                alloc_mb->push_back(*new_node);
             } else {
                 /* Found a free block */
-                MemoryNode *free_memory = (MemoryNode *) memory_pointer;
-                free_memory->data = data;
-                double remain_size = ((MemoryNode *) memory_pointer)->size - data.size();
+                memory_pointer->data = data;
+                double remain_size = memory_pointer->size - data.size();
 
                 if (remain_size > 0) {
-                    free_memory->size = data.size();
-                    void *new_start = (void*)((char*)(free_memory->start_memory) + data.size());
+                    memory_pointer->size = data.size();
+                    void *new_start = (void*)((char*)(memory_pointer->start_memory) + data.size());
                     MemoryNode *remainder = new MemoryNode(new_start, "X", remain_size);
-                    remainder->prev = free_memory->prev;
-
-                    remainder->next = free_memory->next;
-
-                    if (remainder->next == nullptr) {
-                        free_mb_tail = remainder;
-                    } else {
-                        (remainder->next)->prev = remainder;
-                    }
-
-                    if (remainder->prev == nullptr) {
-                        free_mb_head = remainder;
-                    } else {
-                        (remainder->prev)->next = remainder;
-                    }
-                } else {
-                    if (free_memory->prev) {
-                        (free_memory->prev)->next = free_memory->next;
-                    } else {
-                        free_mb_head = free_memory->next;
-                        free_mb_head->prev = nullptr;
-                    }
-
-                    if (free_memory->next) {
-                        (free_memory->next)->prev = free_memory->prev;
-                    } else {
-                        free_mb_tail = free_memory->prev;
-                        free_mb_tail->next = nullptr;
-                    }
-                }
-
-                free_memory->prev = alloc_mb_tail; 
-                free_memory->next = nullptr;
-                
-                if (alloc_mb_tail)
-                    alloc_mb_tail->next = free_memory;
-                
-                alloc_mb_tail = free_memory;
-
+                    free_mb->insert(memory_pointer, *remainder);
+               }
+               alloc_mb->push_back(*memory_pointer);
+               free_mb->erase(memory_pointer);
             }
             // print_alloc();
             length_alloc++;
             return nullptr;
         }
 
-        MemoryNode *getAllocPointer() {
-            return alloc_mb_head;
-        }
-
-        MemoryNode *getFreePointer() {
-            return free_mb_head;
-        }
-
         void print_alloc() {
-            MemoryNode* iter = getAllocPointer();
+            list<MemoryNode>::iterator iter = alloc_mb->begin();
             cout << "----------INFO-----------" << endl;
-            if (alloc_mb_head != nullptr) {
-                cout << "HEAD ALLOC: " << alloc_mb_head->data << endl;
-                // cout << "TEST: " << (void *)((char *)(alloc_mb_head->start_memory) + 1) << endl;
-            }
-
-            if (alloc_mb_tail != nullptr)
-                cout << "TAIL ALLOC: " << alloc_mb_tail->data << endl;
-            
             cout << "ALLOC: ";
-            while (iter != nullptr) {
+            while (iter != alloc_mb->end()) {
                     cout << iter->size << "-";
-                    iter = iter->next; 
+                    iter++;
             }
+            iter = alloc_mb->begin();
             cout << endl;
-            iter = getAllocPointer();
             cout << "ALLOC: ";
-            while (iter != nullptr) {
+            while (iter != alloc_mb->end()) {
                     cout << iter->data << "-";
-                    iter = iter->next; 
+                    iter++;
             }
             cout << endl;
             cout << "\n"<<endl;
 
-            iter = getFreePointer();
-
-            if (free_mb_head != nullptr)
-                cout << "HEAD FREE: " << free_mb_head->data << endl;
-
-            if (free_mb_tail != nullptr)
-                cout << "TAIL FREE: " << free_mb_tail->data << endl;
+            iter = free_mb->begin();
 
             cout << "FREE: ";
 
-            while (iter != nullptr) {
+            while (iter != free_mb->end()) {
                     cout << iter->size << "-";
-                    iter = iter->next; 
+                    iter++;
             }
             cout << endl;
 
-            iter = getFreePointer();
+            iter = free_mb->begin();
             cout << "FREE: ";
-            while (iter != nullptr) {
+            while (iter != free_mb->end()) {
                     cout << iter->data << "-";
-                    iter = iter->next; 
+                    iter++;
             }
             cout << endl;
 
@@ -249,52 +176,21 @@ class Allocator {
         }
 
         void random_dealloc() {
-            MemoryNode *it = alloc_mb_head;
-            int random = rand() % length_alloc;
-            int i = 0;
-            while (it != nullptr) {
+            list<MemoryNode>::iterator it = alloc_mb->begin();
+            int random = rand() % alloc_mb->size();
+            int i=0;
+            while (it != alloc_mb->end()) {
                 if (i == random) {
                     // cout << "REMOVING " << it->data << endl;
-                    // it->data = "X";
-
-                    if (it->prev) {
-                        /* DETACH FROM ALLOC LIST */
-                        (it->prev)->next = it->next;
-                        if (it->next) {
-                            (it->next)->prev = it->prev;
-                        }
-                    }
-
-                    if (it == alloc_mb_tail) {
-                        alloc_mb_tail = alloc_mb_tail->prev;
-                        if (alloc_mb_tail) {
-                            alloc_mb_tail->next = nullptr;
-                        }
-                    } else if (it == alloc_mb_head) {
-                        alloc_mb_head = alloc_mb_head->next;
-                        if (alloc_mb_head) {
-                            alloc_mb_head->prev = nullptr;
-                        }
-                    }
-
-                    if(!free_mb_head) {
-                        free_mb_head   = it;
-                        free_mb_tail   = free_mb_head;
-                        it->prev       = it->next = nullptr;
-                    } else {
-                        free_mb_tail->next = it;
-                        it->prev = free_mb_tail;
-                        it->next = nullptr;
-                        free_mb_tail = it;
-                    }
-                    length_alloc--;
-                 
+                    free_mb->push_back(*it);
+                    alloc_mb->erase(it);
                     break;
                 }
-                it = it->next;
+                it++;
                 i++;
             }
             // print_alloc();
             return;
         }
 };
+
