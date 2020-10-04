@@ -30,8 +30,8 @@ int main(int argc, char* argv[]) {
             cout << "ADDING " << name << endl;
             allocator->alloc(name);
             count++;
-            if (count > 2) {
-                int to_remove = 2;
+            if (count > 1000) {
+                int to_remove = 500;
                 while(to_remove > 0) {
                     allocator->random_dealloc();
                     to_remove--;

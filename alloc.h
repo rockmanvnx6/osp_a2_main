@@ -132,7 +132,7 @@ class Allocator {
                alloc_mb->push_back(*memory_pointer);
                free_mb->erase(memory_pointer);
             }
-            print_alloc();
+            // print_alloc();
             return nullptr;
         }
 
@@ -227,7 +227,7 @@ class Allocator {
                 i++;
             }
             sort_n_merge();
-            print_alloc();
+            // print_alloc();
             return;
         }
 };
