@@ -22,7 +22,8 @@ class Allocator {
     public:
         list<MemoryNode> *alloc_mb;
         list<MemoryNode> *free_mb;
-        string strategy; 
+        string strategy;
+        double total_sbrk_alloc = 0;
 
         Allocator() { /* Default constructor */ }
         
@@ -60,12 +61,7 @@ class Allocator {
                     smallest = iter;
                 }
                 iter++;
-            }    
-
-            if (smallest != free_mb->end()) {
-                cout << "SMALLEST: " << smallest->data << endl;
-            }
-            
+            }                
             
             return smallest;
         }
@@ -81,12 +77,7 @@ class Allocator {
                     largest = iter;
                 }
                 iter++;
-            }    
-
-            if (largest != free_mb->end()) {
-                cout << "LARGEST: " << largest->data << endl;
-            }
-            
+            }                
             
             return largest;
         }
@@ -104,7 +95,7 @@ class Allocator {
             if (strategy.compare("worst_fit") == 0) {
                 return worst_fit(data);
             }
-            cout << ERROR::INVALID_STRATEGY_ERROR << endl;
+
             return free_mb->end();
         }
 
@@ -116,12 +107,13 @@ class Allocator {
                     cout << ERROR::MEMORY_ERROR << endl;
                     return nullptr;
                 };
-                MemoryNode *new_node = new MemoryNode(request_memory, data, data.size());
+                total_sbrk_alloc           += data.size();
+                MemoryNode *new_node        = new MemoryNode(request_memory, data, data.size());
                 alloc_mb->push_back(*new_node);
             } else {
                 /* Found a free block */
-                memory_pointer->data = data;
-                double remain_size = memory_pointer->size - data.size();
+                memory_pointer->data        = data;
+                double remain_size          = memory_pointer->size - data.size();
 
                 if (remain_size > 0) {
                     memory_pointer->size = data.size();
@@ -200,7 +192,6 @@ class Allocator {
                 while (next_it != free_mb->end()) {
                     void *next_start = (void*)((char*)(it->start_memory) + (int)it->size);
                     if (next_it->start_memory == next_start) {
-                        cout << "MERGING: " << it->data << " and " << next_it->data << endl;
                         /* MERGE 2 nodes */
                         it->size += next_it->size;
                         free_mb->erase(next_it++);
@@ -218,7 +209,6 @@ class Allocator {
             int i=0;
             while (it != alloc_mb->end()) {
                 if (i == random) {
-                    cout << "REMOVING " << it->data << endl;
                     free_mb->push_back(*it);
                     alloc_mb->erase(it);
                     break;
