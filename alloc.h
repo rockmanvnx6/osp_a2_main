@@ -214,62 +214,6 @@ class Allocator {
             return 0;
         }
 
-        void print_alloc() {
-            list<MemoryNode>::iterator iter = alloc_mb->begin();
-            cout << "----------INFO-----------" << endl;
-            cout << "ALLOC: ";
-            while (iter != alloc_mb->end()) {
-                    cout << iter->size << "-";
-                    iter++;
-            }
-            iter = alloc_mb->begin();
-            cout << endl;
-            cout << "ALLOC: ";
-            while (iter != alloc_mb->end()) {
-                    cout << iter->data << "-";
-                    iter++;
-            }
-            cout << endl;
-
-            iter = alloc_mb->begin();
-            cout << "ALLOC: ";
-            while (iter != alloc_mb->end()) {
-                    cout << iter->start_memory<< "-";
-                    iter++;
-            }
-            cout << endl;
- 
-            cout << "\n"<<endl;
-
-            iter = free_mb->begin();
-
-            cout << "FREE: ";
-
-            while (iter != free_mb->end()) {
-                    cout << iter->size << "-";
-                    iter++;
-            }
-            cout << endl;
-
-            iter = free_mb->begin();
-            cout << "FREE: ";
-            while (iter != free_mb->end()) {
-                    cout << iter->data << "-";
-                    iter++;
-            }
-            cout << endl;
-
-            
-            iter = free_mb->begin();
-            cout << "FREE: ";
-            while (iter != free_mb->end()) {
-                    cout << iter->start_memory<< "-";
-                    iter++;
-            }
-            cout << endl;
-            cout << "--------------------------" << endl;
-        }
-
         void sort_n_merge() {
             /**
              * Sort and merge the free memory list.
