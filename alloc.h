@@ -155,8 +155,10 @@ class Allocator {
              * This function will then use that free_mb block to store the data, which
              * could have 3 possible outcomes:
              * 
-             * 1. If the data has the same size as free_mb block. We simply move that block
-             * to alloc_mb list. And assign data to that block.
+             * 1. If there is no available block in free_mb block (could be that data size larger
+             * than all of the blocks in free_mb or there is no block in free_mb). We simply
+             * call sbrk() to allocate a new block.
+             * 
              * 
              * 2. If the data has smaller size than the free_mb block. We divide the free_mb
              * block into 2 different block:
@@ -166,13 +168,21 @@ class Allocator {
              *      size - data size. This memory stays in the free_mb block with 
              *      start_memory = old_start_memory + data.size
              * 
-             * 3. If there is no available block in free_mb block (could be that data size larger
-             * than all of the blocks in free_mb or there is no block in free_mb). We simply
-             * call sbrk() to allocate a new block.
+             * 3. If the data has the same size as free_mb block. We simply move that block
+             * to alloc_mb list. And assign data to that block.
              * 
              */
             list<MemoryNode>::iterator memory_pointer = search_free_memory(data, strategy);
             if (memory_pointer == free_mb->end()) {
+                /**
+                 * Case 1: No available block.
+                 * 
+                 * Allocate new memory node to alloc_mb using sbrk() with the data
+                 * size.
+                 * 
+                 * If there is no memory left in the system. We will return ENOMEM 
+                 * error code.
+                 */
                 void *request_memory = sbrk(data.size());
                 if (request_memory == ERROR::SBRK_MEMORY_ERROR) { 
                     cout << ERROR::MEMORY_ERROR << endl;
@@ -182,20 +192,25 @@ class Allocator {
                 MemoryNode *new_node        = new MemoryNode(request_memory, data, data.size());
                 alloc_mb->push_back(*new_node);
             } else {
-                /* Found a free block */
                 memory_pointer->data        = data;
                 double remain_size          = memory_pointer->size - data.size();
 
                 if (remain_size > 0) {
+                    /**
+                     * Case 2: We take the remain_size and create a new memory block
+                     * in the free_mb list.
+                     */
                     memory_pointer->size = data.size();
                     void *new_start = (void*)((char*)(memory_pointer->start_memory) + data.size());
                     MemoryNode *remainder = new MemoryNode(new_start, EMPTY, remain_size);
                     free_mb->insert(memory_pointer, *remainder);
                }
+               /**
+                * Case 2, 3: We insert the found memory to the alloc system.
+                */
                alloc_mb->push_back(*memory_pointer);
                free_mb->erase(memory_pointer);
             }
-            // print_alloc();
             return 0;
         }
 
@@ -256,6 +271,13 @@ class Allocator {
         }
 
         void sort_n_merge() {
+            /**
+             * Sort and merge the free memory list.
+             * 
+             * This function also merge if the memory addresses of any 2 blocks
+             * in the list are consecutive (i.e block_1_start + block_1_Size = block2_start).
+             * 
+             */
             free_mb->sort(Allocator::compare_func);
             list<MemoryNode>::iterator it = free_mb->begin();
             while(it != free_mb->end()) {
@@ -275,6 +297,13 @@ class Allocator {
         }
 
         void random_dealloc() {
+            /**
+             * This function randomly deallocate a memory block from alloc_mb
+             * and then push it to free_mb list.
+             * 
+             * After deallocated, we will call sort_n_merge to sort and merge
+             * consecutive memory blocks in free_mb.
+             */
             list<MemoryNode>::iterator it = alloc_mb->begin();
             int random = rand() % alloc_mb->size();
             int i=0;
@@ -289,7 +318,6 @@ class Allocator {
                 i++;
             }
             sort_n_merge();
-            // print_alloc();
             return;
         }
 };
