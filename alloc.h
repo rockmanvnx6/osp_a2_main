@@ -4,7 +4,26 @@
 #include "error.h"
 using namespace std;
 
+/**
+ * File: alloc.h
+ * Author: s3619352@student.rmit.edu.au
+ * 
+ * This files contains the allocation algorithm. It will
+ * allocate based by strategy. This file will be called 
+ * 
+ * For more information and implementation explainations. Please
+ * read more at the description of each class.
+ */
 class MemoryNode {
+    /**
+     * Represent a memory node.
+     * 
+     * Params:
+     * - start_memory: Store the start memory address. Either defined by sbrk
+     * or by a node split (more at Allocator.alloc).
+     * - data: store the actual content from each line.
+     * - size: define the memory size of the node.
+     */
     public:
         void *start_memory;
         string data;
@@ -19,9 +38,19 @@ class MemoryNode {
 };
 
 class Allocator {
+    /**
+     * Main allocator class. 
+     * 
+     * This class will allocate the memory to alloc_mb and free_mb lists
+     * defined in main file based on the defined strategy.
+     * 
+     * alloc_mb: List to store allocated memory blocks.
+     * free_mb: List to store free memory blocks which are deallocated from alloc_mb.
+     */
     public:
         list<MemoryNode> *alloc_mb;
         list<MemoryNode> *free_mb;
+        const string EMPTY = "";
         string strategy;
         double total_sbrk_alloc = 0;
 
@@ -38,6 +67,12 @@ class Allocator {
         }
 
         list<MemoryNode>::iterator first_fit(string data) {
+            /**
+             * First-fit strategy implementation.
+             * 
+             * This function return an iterator of memory node that found by the
+             * first fit - the first node that fits the data size.
+             */
             list<MemoryNode>::iterator iter = free_mb->begin();
 
             while(iter != free_mb->end()) {
@@ -51,8 +86,13 @@ class Allocator {
         }
 
         list<MemoryNode>::iterator best_fit(string data) {
+            /**
+             * Best-fit strategy implementation.
+             * 
+             * This function return an iterator of memory node that found by the
+             * best fit - the smallest node that fits the data size.
+             */
             list<MemoryNode>::iterator iter = free_mb->begin();
-            // double min_size = numeric_limits<double>::max();
             list<MemoryNode>::iterator smallest = free_mb->end();
             
             while(iter != free_mb->end()) {
@@ -67,8 +107,13 @@ class Allocator {
         }
 
         list<MemoryNode>::iterator worst_fit(string data) {
+            /**
+             * Worst-fit strategy implementation.
+             * 
+             * This function return an iterator of memory node that found by the
+             * worst fit - the largest node that fits the data size.
+             */
             list<MemoryNode>::iterator iter = free_mb->begin();
-            // double min_size = numeric_limits<double>::max();
             list<MemoryNode>::iterator largest = free_mb->end();
             
             while(iter != free_mb->end()) {
@@ -99,13 +144,39 @@ class Allocator {
             return free_mb->end();
         }
 
-        void *alloc(string data) {
+        int alloc(string data) {
+            /**
+             * This function alloc a memory to alloc_mb given the data
+             * in string format.
+             * 
+             * If search_free_memory returns a valid iterator of a free memory block 
+             * from free_mb.
+             * 
+             * This function will then use that free_mb block to store the data, which
+             * could have 3 possible outcomes:
+             * 
+             * 1. If the data has the same size as free_mb block. We simply move that block
+             * to alloc_mb list. And assign data to that block.
+             * 
+             * 2. If the data has smaller size than the free_mb block. We divide the free_mb
+             * block into 2 different block:
+             *   a. One which just contains enough size to store the data. This block is
+             *      simply moved to the alloc_mb list.
+             *   b. One which contains the left over memory which results from free_mb block
+             *      size - data size. This memory stays in the free_mb block with 
+             *      start_memory = old_start_memory + data.size
+             * 
+             * 3. If there is no available block in free_mb block (could be that data size larger
+             * than all of the blocks in free_mb or there is no block in free_mb). We simply
+             * call sbrk() to allocate a new block.
+             * 
+             */
             list<MemoryNode>::iterator memory_pointer = search_free_memory(data, strategy);
             if (memory_pointer == free_mb->end()) {
                 void *request_memory = sbrk(data.size());
                 if (request_memory == ERROR::SBRK_MEMORY_ERROR) { 
                     cout << ERROR::MEMORY_ERROR << endl;
-                    return nullptr;
+                    return ENOMEM;
                 };
                 total_sbrk_alloc           += data.size();
                 MemoryNode *new_node        = new MemoryNode(request_memory, data, data.size());
@@ -118,14 +189,14 @@ class Allocator {
                 if (remain_size > 0) {
                     memory_pointer->size = data.size();
                     void *new_start = (void*)((char*)(memory_pointer->start_memory) + data.size());
-                    MemoryNode *remainder = new MemoryNode(new_start, "X", remain_size);
+                    MemoryNode *remainder = new MemoryNode(new_start, EMPTY, remain_size);
                     free_mb->insert(memory_pointer, *remainder);
                }
                alloc_mb->push_back(*memory_pointer);
                free_mb->erase(memory_pointer);
             }
             // print_alloc();
-            return nullptr;
+            return 0;
         }
 
         void print_alloc() {
@@ -209,6 +280,7 @@ class Allocator {
             int i=0;
             while (it != alloc_mb->end()) {
                 if (i == random) {
+                    (it->data).clear();
                     free_mb->push_back(*it);
                     alloc_mb->erase(it);
                     break;

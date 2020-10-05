@@ -42,39 +42,63 @@ void print_usage(string argv0) {
             << "      node in allocMB and freeMB." << endl;
 }
 
+template <typename MemoryNode>
+void write_memory(list<MemoryNode> &listmb, ofstream &output_file) {
+    typename list<MemoryNode>::iterator iter_alloc = listmb.begin();
+    while (iter_alloc != listmb.end()) {
+        output_file<< iter_alloc->start_memory << "\t" << iter_alloc->size << endl;
+        iter_alloc++;
+    }
+}
+
 int main(int argc, char* argv[]) {
     /* Setting up environment */
     srand((unsigned int)time(NULL)); // Define randomness
-    list<MemoryNode> alloc_mb;
-    list<MemoryNode> free_mb;
-
-    /* Check valid usage */
+    
     if (argc != 4) {
+        /**
+         * Returns invalid arguments error code if number of argument doesn't meet.
+         */
         print_usage(argv[0]);
         return EINVAL;
     }
 
     ifstream input_file (argv[2]);
     ofstream output_file;
-    string   strategy   (argv[1]);
+    string   strategy   (argv[1]), line;
 
-    if ((strategy != "first_fit") && (strategy != "best_fit") &&
-        (strategy != "worst_fit")) {
+    if ((strategy != "first_fit") && (strategy != "best_fit") && (strategy != "worst_fit")) {
+        /**
+         * If strategy name isn't found. Return a invalid arguments 
+         * error code.
+         */
         cout << ERROR::INVALID_STRAT << endl;
         print_usage(argv[0]);
         return EINVAL;
     }
 
-    /* Allocate line by line from <input_file>*/
+    /** 
+     * Allocate line by line from <input_file>.
+     */
+    list<MemoryNode> alloc_mb, free_mb;
     Allocator *allocator = new Allocator(&alloc_mb, &free_mb, strategy); 
 
     int count = 0;
-    string line;
     if (input_file.is_open()) {
         while (getline(input_file, line)) {
             string name;
             stringstream(line) >> name;
-            allocator->alloc(name);
+            int outcome = allocator->alloc(name);
+
+            if (outcome == ENOMEM) {
+                /**
+                 * If sbrk() returns an error. Which normally happens when 
+                 * there is no memory left on the system. We return a out of memory
+                 * error code.
+                 */
+                return ENOMEM;
+            }
+
             count++;
             if (count > 1000) {
                 /* If exceeds 1000, remove 500 (as the specs) */
@@ -87,30 +111,27 @@ int main(int argc, char* argv[]) {
             }
         }
     } else {
+        /**
+         *  If find can't be open. We return a file not found error.
+         */
         cout << ERROR::FILE_NOT_FOUND << endl;
         return ENOENT;
     }
 
-    input_file.close();
+    input_file.close(); 
 
-    /* Write output into <output_file> */
+    /**
+     *  Write output into <output_file> 
+     */
     output_file.open(argv[3]);
     output_file << "Total SBRK allocation: " << allocator->total_sbrk_alloc << endl;
-    list<MemoryNode>::iterator iter_alloc = alloc_mb.begin();
-    list<MemoryNode>::iterator iter_free  = free_mb.begin();
-
     output_file << "------ALLOC LIST------" << endl;
-    while (iter_alloc != alloc_mb.end()) {
-        output_file<< iter_alloc->start_memory << "\t" << iter_alloc->size << endl;
-        iter_alloc++;
-    }
-    output_file << endl;
+    write_memory(alloc_mb, output_file);
 
     output_file << "------FREE LIST------" << endl;
-    while (iter_free != free_mb.end()) {
-        output_file<< iter_free->start_memory << "\t" << iter_free->size << endl;
-        iter_free++;
-    }
+    write_memory(free_mb, output_file);
+
+    output_file.close();
 
     /* Complete. Finish the script */
     cout << "Completed. Please check " << argv[3] << " for details." << endl;
