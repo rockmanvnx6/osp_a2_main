@@ -10,7 +10,7 @@ using namespace std;
  * File: main.cpp
  * Author: s3619352@student.rmit.edu.au
  * 
- * Main file that allows to call allocator code (located in alloc.h).
+ * Main file that allows calling allocator code (located in alloc.h).
  * 
  * Usage: main.cpp <strategy> <input_file> <output_file>
  * Strategy List:
@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
     
     if (argc != 4) {
         /**
-         * Returns invalid arguments error code if number of argument doesn't meet.
+         * Returns invalid arguments error code if number of arguments doesn't meet.
          */
         print_usage(argv[0]);
         return EINVAL;
@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
 
     if ((strategy != "first_fit") && (strategy != "best_fit") && (strategy != "worst_fit")) {
         /**
-         * If strategy name isn't found. Return a invalid arguments 
+         * If the strategy name isn't found. Return a invalid arguments 
          * error code.
          */
         cout << ERROR::INVALID_STRAT << endl;
