@@ -11,7 +11,7 @@ using namespace std;
  * Header file contains the allocation algorithm. It will
  * allocate based by strategy. This file will be called 
  * 
- * For more information and implementation explainations. Please
+ * For more information and implementation explanations. Please
  * read more at the description of each class.
  */
 class MemoryNode {
@@ -42,7 +42,7 @@ class Allocator {
      * Main allocator class. 
      * 
      * This class will allocate the memory to alloc_mb and free_mb lists
-     * defined in main file based on the defined strategy.
+     * defined in the main file based on the defined strategy.
      * 
      * alloc_mb: List to store allocated memory blocks.
      * free_mb: List to store free memory blocks which are deallocated from alloc_mb.
