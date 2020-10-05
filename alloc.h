@@ -8,7 +8,7 @@ using namespace std;
  * File: alloc.h
  * Author: s3619352@student.rmit.edu.au
  * 
- * This files contains the allocation algorithm. It will
+ * Header file contains the allocation algorithm. It will
  * allocate based by strategy. This file will be called 
  * 
  * For more information and implementation explainations. Please
