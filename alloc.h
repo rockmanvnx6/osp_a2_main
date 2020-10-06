@@ -204,12 +204,13 @@ class Allocator {
                     void *new_start = (void*)((char*)(memory_pointer->start_memory) + data.size());
                     MemoryNode *remainder = new MemoryNode(new_start, EMPTY, remain_size);
                     free_mb->insert(memory_pointer, *remainder);
-               }
-               /**
+                }
+                /**
                 * Case 2, 3: We insert the found memory to the alloc system.
                 */
-               alloc_mb->push_back(*memory_pointer);
-               free_mb->erase(memory_pointer);
+                alloc_mb->push_back(*memory_pointer);
+                free_mb->erase(memory_pointer);
+                sort_n_merge();
             }
             return 0;
         }
