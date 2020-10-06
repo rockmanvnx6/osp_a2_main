@@ -244,7 +244,7 @@ class Allocator {
         void random_dealloc() {
             /**
              * This function randomly deallocate a memory block from alloc_mb
-             * and then push it to free_mb list.
+             * and then push it to the free_mb list.
              * 
              * After deallocated, we will call sort_n_merge to sort and merge
              * consecutive memory blocks in free_mb.
